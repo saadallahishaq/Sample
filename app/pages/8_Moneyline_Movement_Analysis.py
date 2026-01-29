@@ -5,27 +5,18 @@ import plotly.graph_objects as go
 import sys
 import os
 
-# Robust path fix: finds the 'src' folder even if launched from different levels
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, "../../"))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# FOOLPROOF IMPORT FIX: Add project root to sys.path
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+if root not in sys.path:
+    sys.path.insert(0, root)
 
 from src.utils.data_loader import load_games, load_odds
 
-def american_to_implied(moneyline):
-    if moneyline > 0: return 100 / (moneyline + 100)
-    else: return abs(moneyline) / (abs(moneyline) + 100)
+def american_to_implied(ml):
+    return (100 / (ml + 100)) if ml > 0 else (abs(ml) / (abs(ml) + 100))
 
 st.set_page_config(page_title="Advanced Analytics | Crown Investment Group", layout="wide")
-
-st.markdown("""
-    <style>
-    .main { background-color: #0E1117; }
-    .stMetric { border-left: 5px solid #FF4B11 !important; padding-left: 10px; }
-    h1, h2, h3 { color: #FF8C00 !important; }
-    </style>
-    """, unsafe_allow_html=True)
+st.markdown("<style>.main { background-color: #0E1117; } .stMetric { border-left: 5px solid #FF4B11; padding-left: 10px; } h1, h2, h3 { color: #FF8C00 !important; }</style>", unsafe_allow_html=True)
 
 st.title("🏀 Advanced Moneyline & Spread Analytics")
 st.markdown("---")
@@ -36,64 +27,34 @@ games_df = load_games(season)
 if games_df.empty:
     st.warning(f"No games found for season {season}.")
 else:
-    game_options = games_df.apply(lambda x: f"{x['GameID']} - {x['AwayTeam']} @ {x['HomeTeam']} ({x['Day']})", axis=1).tolist()
-    selected_game_str = st.selectbox("Select Game", game_options)
-    selected_game_id = int(selected_game_str.split(" - ")[0])
-
-    odds_df = load_odds(selected_game_id)
-    game_info = games_df[games_df['GameID'] == selected_game_id].iloc[0]
+    game_opts = games_df.apply(lambda x: f"{x['GameID']} - {x['AwayTeam']} @ {x['HomeTeam']}", axis=1).tolist()
+    sel_game = st.selectbox("Select Game", game_opts)
+    gid = int(sel_game.split(" - ")[0])
+    odds_df = load_odds(gid)
+    info = games_df[games_df['GameID'] == gid].iloc[0]
 
     if odds_df.empty:
-        st.error("Odds data not detected for this game.")
+        st.error("Odds data not detected.")
     else:
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Away Team", game_info['AwayTeam'], f"{game_info['AwayTeamScore']}")
-        col2.metric("Home Team", game_info['HomeTeam'], f"{game_info['HomeTeamScore']}")
-        
-        opening_ml = odds_df.iloc[0]['HomeMoneyLine']
-        closing_ml = odds_df.iloc[-1]['HomeMoneyLine']
-        ml_change = closing_ml - opening_ml
-        col3.metric("Home ML Shift", f"{closing_ml}", f"{ml_change:+}")
-        
-        opening_sp = odds_df.iloc[0]['HomeSpread']
-        closing_sp = odds_df.iloc[-1]['HomeSpread']
-        sp_change = closing_sp - opening_sp
-        col4.metric("Home Spread Shift", f"{closing_sp}", f"{sp_change:+}")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Away Team", info['AwayTeam'], info['AwayTeamScore'])
+        c2.metric("Home Team", info['HomeTeam'], info['HomeTeamScore'])
+        c3.metric("Home ML", odds_df.iloc[-1]['HomeMoneyLine'])
+        c4.metric("Home Spread", info['PointSpread'])
 
-        st.markdown("### Line Movement Analysis")
-        tab1, tab2, tab3 = st.tabs(["💰 Moneyline Movement", "📈 Implied Probability", "🎯 Spread Movement"])
-
-        with tab1:
-            fig_ml = px.line(odds_df, x='DateTime', y=['HomeMoneyLine', 'AwayMoneyLine'],
-                            title="Moneyline Odds Over Time",
-                            template="plotly_dark",
-                            color_discrete_map={"HomeMoneyLine": "#FF4B11", "AwayMoneyLine": "#00CC96"})
-            fig_ml.update_layout(hovermode="x unified")
-            st.plotly_chart(fig_ml, use_container_width=True)
-
-        with tab2:
-            odds_df['HomeImplied'] = odds_df['HomeMoneyLine'].apply(american_to_implied)
-            odds_df['AwayImplied'] = odds_df['AwayMoneyLine'].apply(american_to_implied)
-            
-            fig_prob = go.Figure()
-            fig_prob.add_trace(go.Scatter(x=odds_df['DateTime'], y=odds_df['HomeImplied'], 
-                                        fill='tozeroy', name=f"Home Win Prob", line_color='#FF4B11'))
-            fig_prob.add_trace(go.Scatter(x=odds_df['DateTime'], y=odds_df['AwayImplied'], 
-                                        fill='tonexty', name=f"Away Win Prob", line_color='#00CC96'))
-            
-            fig_prob.update_layout(title="Win Probability (Market Sentiment)", template="plotly_dark", 
-                                 yaxis_tickformat='.1%', hovermode="x unified")
-            st.plotly_chart(fig_prob, use_container_width=True)
-
-        with tab3:
-            fig_sp = px.area(odds_df, x='DateTime', y='HomeSpread',
-                            title=f"Point Spread Movement ({game_info['HomeTeam']})",
-                            template="plotly_dark",
-                            color_discrete_sequence=['#FF4B11'])
-            fig_sp.update_layout(hovermode="x unified")
-            st.plotly_chart(fig_sp, use_container_width=True)
-
-        with st.expander("Detailed Odds Log"):
-            st.dataframe(odds_df, use_container_width=True)
+        t1, t2, t3 = st.tabs(["💰 Moneyline", "📈 Probability", "🎯 Spread"])
+        with t1:
+            st.plotly_chart(px.line(odds_df, x='DateTime', y=['HomeMoneyLine', 'AwayMoneyLine'], template="plotly_dark", color_discrete_map={"HomeMoneyLine": "#FF4B11", "AwayMoneyLine": "#00CC96"}), use_container_width=True)
+        with t2:
+            odds_df['HomeProb'] = odds_df['HomeMoneyLine'].apply(american_to_implied)
+            odds_df['AwayProb'] = odds_df['AwayMoneyLine'].apply(american_to_implied)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=odds_df['DateTime'], y=odds_df['HomeProb'], fill='tozeroy', name="Home Prob", line_color='#FF4B11'))
+            fig.add_trace(go.Scatter(x=odds_df['DateTime'], y=odds_df['AwayProb'], fill='tonexty', name="Away Prob", line_color='#00CC96'))
+            fig.update_layout(template="plotly_dark", yaxis_tickformat='.1%')
+            st.plotly_chart(fig, use_container_width=True)
+        with t3:
+            st.plotly_chart(px.area(odds_df, x='DateTime', y='HomeSpread', template="plotly_dark", color_discrete_sequence=['#FF4B11']), use_container_width=True)
+        st.dataframe(odds_df, use_container_width=True)
 
 st.sidebar.info("Crown Investment Group")
