@@ -1,0 +1,6 @@
+PlayID,QuarterID,QuarterName,Sequence,TimeRemainingMinutes,TimeRemainingSeconds,AwayTeam,HomeTeam,AwayScore,HomeScore,Description
+1,1,Q1,1,12,0,LAL,DAL,0,0,Game Start
+2,1,Q1,2,11,30,LAL,DAL,2,0,LeBron James layup
+3,1,Q1,3,11,10,LAL,DAL,2,3,Luka Doncic 3pt
+4,4,Q4,100,0,5,LAL,DAL,110,108,Anthony Davis free throw
+5,4,Q4,101,0,0,LAL,DAL,112,108,End of Game
