@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from src.utils.data_loader import load_games
 
 st.set_page_config(page_title="Games | Crown Investment Group", layout="wide")

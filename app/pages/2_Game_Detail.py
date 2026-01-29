@@ -4,7 +4,7 @@ import plotly.express as px
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from src.utils.data_loader import load_games, load_pbp
 
 st.set_page_config(page_title="Game Detail | Crown Investment Group", layout="wide")

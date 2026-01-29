@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from src.utils.data_loader import load_games, load_odds
 
@@ -32,7 +32,7 @@ season = st.sidebar.selectbox("Select Season", [2026, 2025], index=0)
 games_df = load_games(season)
 
 if games_df.empty:
-    st.warning(f"No games found for season {season}.")
+    st.warning(f"No games found for season {season}. Please run the scraper script first.")
 else:
     game_options = games_df.apply(lambda x: f"{x['GameID']} - {x['AwayTeam']} @ {x['HomeTeam']} ({x['Day']})", axis=1).tolist()
     selected_game_str = st.selectbox("Select Game", game_options)
@@ -75,9 +75,9 @@ else:
             
             fig_prob = go.Figure()
             fig_prob.add_trace(go.Scatter(x=odds_df['DateTime'], y=odds_df['HomeImplied'], 
-                                        fill='tozeroy', name=f"{game_info['HomeTeam']} Win Prob", line_color='#FF4B11'))
+                                        fill='tozeroy', name=f"Home Win Prob", line_color='#FF4B11'))
             fig_prob.add_trace(go.Scatter(x=odds_df['DateTime'], y=odds_df['AwayImplied'], 
-                                        fill='tonexty', name=f"{game_info['AwayTeam']} Win Prob", line_color='#00CC96'))
+                                        fill='tonexty', name=f"Away Win Prob", line_color='#00CC96'))
             
             fig_prob.update_layout(title="Win Probability (Market Sentiment)", template="plotly_dark", 
                                  yaxis_tickformat='.1%', hovermode="x unified")
