@@ -5,15 +5,17 @@ import plotly.graph_objects as go
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+# Robust path fix: finds the 'src' folder even if launched from different levels
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from src.utils.data_loader import load_games, load_odds
 
 def american_to_implied(moneyline):
-    if moneyline > 0:
-        return 100 / (moneyline + 100)
-    else:
-        return abs(moneyline) / (abs(moneyline) + 100)
+    if moneyline > 0: return 100 / (moneyline + 100)
+    else: return abs(moneyline) / (abs(moneyline) + 100)
 
 st.set_page_config(page_title="Advanced Analytics | Crown Investment Group", layout="wide")
 
@@ -32,7 +34,7 @@ season = st.sidebar.selectbox("Select Season", [2026, 2025], index=0)
 games_df = load_games(season)
 
 if games_df.empty:
-    st.warning(f"No games found for season {season}. Please run the scraper script first.")
+    st.warning(f"No games found for season {season}.")
 else:
     game_options = games_df.apply(lambda x: f"{x['GameID']} - {x['AwayTeam']} @ {x['HomeTeam']} ({x['Day']})", axis=1).tolist()
     selected_game_str = st.selectbox("Select Game", game_options)
